@@ -11,6 +11,10 @@ function antwort(bool $ok, string $meldung = '', int $status = 200): void {
     exit;
 }
 
+// Fehlt die Hilfsdatei (z. B. beim Hochladen vergessen), ehrlich melden statt still abzubrechen
+if (!is_file(__DIR__ . '/anfrage_text.php')) antwort(false, 'Das hat leider nicht geklappt. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.', 500);
+require __DIR__ . '/anfrage_text.php';
+
 function feld(string $name, int $max): string {
     $wert = trim((string)($_POST[$name] ?? ''));
     // Zeilenumbrueche nur im Nachrichtenfeld erlaubt; sonst entfernen (Schutz gegen Kopfzeilen-Einschleusung)
@@ -39,9 +43,9 @@ $datum = feld('datum', 20);
 $gaeste = feld('gaeste', 6);
 $nachricht = feld('nachricht', 3000);
 
-if ($name === '' || $telefon === '' || $anlass === '') antwort(false, 'Bitte Name, Telefon und Anlass angeben.', 422);
+if ($name === '' || $telefon === '' || $email === '' || $anlass === '') antwort(false, 'Bitte Name, Telefon, E-Mail und Anlass angeben.', 422);
 if (!preg_match('/^[0-9 +()\/-]{6,40}$/', $telefon)) antwort(false, 'Bitte eine gültige Telefonnummer angeben.', 422);
-if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) antwort(false, 'Bitte eine gültige E-Mail-Adresse angeben.', 422);
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) antwort(false, 'Bitte eine gültige E-Mail-Adresse angeben.', 422);
 
 $datumText = 'offen';
 if ($datum !== '') {
@@ -49,14 +53,9 @@ if ($datum !== '') {
     $datumText = $d ? $d->format('d.m.Y') : $datum;
 }
 
-$text = "Neue Anfrage über die Webseite\n\n"
-    . "Name: $name\n"
-    . "Telefon: $telefon\n"
-    . "E-Mail: " . ($email ?: '-') . "\n"
-    . "Anlass: $anlass\n"
-    . "Wunschdatum: $datumText\n"
-    . "Gäste: " . ($gaeste ?: '-') . "\n\n"
-    . ($nachricht !== '' ? "Nachricht:\n$nachricht\n" : '');
+$zusatz = zusatz_werte($konfig['zusatzfelder'] ?? [], $_POST);
+$text = anfrage_text(compact('name', 'telefon', 'email', 'anlass', 'datumText', 'gaeste', 'nachricht'),
+    $zusatz, (string)($konfig['quelle'] ?? ''));
 
 $betreff = '=?UTF-8?B?' . base64_encode("Anfrage $anlass – $datumText – $name") . '?=';
 $kopf = [
@@ -64,7 +63,7 @@ $kopf = [
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
 ];
-if ($email !== '') $kopf[] = "Reply-To: $email";
+$kopf[] = "Reply-To: $email";
 
 if (!mail($konfig['empfaenger'], $betreff, $text, implode("\r\n", $kopf), '-f' . $konfig['absender'])) {
     antwort(false, 'Das hat leider nicht geklappt. Bitte rufen Sie uns an oder schreiben Sie per WhatsApp.', 500);
