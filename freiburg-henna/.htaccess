@@ -1,0 +1,14 @@
+# Alles nur über https: http-Aufrufe dauerhaft auf https umleiten
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Browser merken sich, dass die Seite nur per https erreichbar ist (1 Jahr)
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+</IfModule>
+
+# Interne Formular-Einstellungen nicht öffentlich abrufbar
+<Files "anfrage-konfig.json">
+  Require all denied
+</Files>
