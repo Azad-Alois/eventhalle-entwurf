@@ -43,8 +43,9 @@ $datum = feld('datum', 20);
 $gaeste = feld('gaeste', 6);
 $nachricht = feld('nachricht', 3000);
 
-if ($name === '' || $telefon === '' || $email === '' || $anlass === '') antwort(false, 'Bitte Name, Telefon, E-Mail und Anlass angeben.', 422);
-if (!preg_match('/^[0-9 +()\/-]{6,40}$/', $telefon)) antwort(false, 'Bitte eine gültige Telefonnummer angeben.', 422);
+// Telefon ist freiwillig (Azat 30.10.2026) – wenn angegeben, muss es eine Nummer sein
+if ($name === '' || $email === '' || $anlass === '') antwort(false, 'Bitte Name, E-Mail und Anlass angeben.', 422);
+if ($telefon !== '' && !preg_match('/^[0-9 +()\/-]{6,40}$/', $telefon)) antwort(false, 'Bitte eine gültige Telefonnummer angeben.', 422);
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) antwort(false, 'Bitte eine gültige E-Mail-Adresse angeben.', 422);
 
 $datumText = 'offen';

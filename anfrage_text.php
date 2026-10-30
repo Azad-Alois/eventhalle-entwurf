@@ -19,7 +19,7 @@ function zusatz_werte(array $konfigFelder, array $post): array {
 function anfrage_text(array $f, array $zusatz, string $quelle): string {
     $text = "Neue Anfrage über die Webseite\n\n"
         . "Name: {$f['name']}\n"
-        . "Telefon: {$f['telefon']}\n"
+        . "Telefon: " . ($f['telefon'] ?: '-') . "\n"
         . "E-Mail: {$f['email']}\n"
         . "Anlass: {$f['anlass']}\n"
         . "Wunschdatum: {$f['datumText']}\n"
